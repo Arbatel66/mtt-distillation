@@ -81,6 +81,7 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         class_map = {x:x for x in range(num_classes)}
 
 
+
     elif dataset == 'ImageNet':
         channel = 3
         im_size = (128, 128)
@@ -114,6 +115,68 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         class_map_inv = {i: x for i, x in enumerate(config.img_net_classes)}
         class_names = None
 
+    elif dataset == 'LFW':
+        print('LFW_START: \n')
+        channel = 3
+        im_size = (128, 128)  # LFW 图像的大小可以设置为 (128, 128)
+        print('LFW_-1: \n')
+        # num_classes = len(datasets.LFWPeople(data_path, split='train').target_names)
+
+        lfw_dataset = datasets.LFWPeople(data_path, split='train', download=True)
+        print(dir(lfw_dataset))
+        num_classes = len(lfw_dataset.names)
+
+        print('LFW_0: \n')
+        mean = [0.5, 0.5, 0.5]
+        std = [0.5, 0.5, 0.5]
+        print('LFW1: \n')
+        # 数据集转换（数据增强等）
+        transform = transforms.Compose([
+            transforms.Resize(im_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std)
+        ])
+        print('LFW2: \n')
+        # 加载训练集和测试集
+        dst_train = datasets.LFWPeople(data_path, split='train', download=True, transform=transform)
+        dst_test = datasets.LFWPeople(data_path, split='test', download=True, transform=transform)
+
+        # 获取类别名称和映射
+        class_names = dst_train.names
+        class_map = {x: x for x in range(num_classes)}
+        # class_map = dst_train.class_to_idx
+
+
+    elif dataset == 'LFW100':
+        print('LFW_START: \n')
+        channel = 3
+        im_size = (128, 128)  # LFW 图像的大小可以设置为 (128, 128)
+        print('LFW_-1: \n')
+        # num_classes = len(datasets.LFWPeople(data_path, split='train').target_names)
+
+        lfw_dataset = datasets.LFWPeople(data_path, split='train', download=True)
+        print(dir(lfw_dataset))
+        num_classes = len(lfw_dataset.names)
+
+        print('LFW_0: \n')
+        mean = [0.5, 0.5, 0.5]
+        std = [0.5, 0.5, 0.5]
+        print('LFW1: \n')
+        # 数据集转换（数据增强等）
+        transform = transforms.Compose([
+            transforms.Resize(im_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std)
+        ])
+        print('LFW2: \n')
+        # 加载训练集和测试集
+        dst_train = datasets.LFWPeople(data_path, split='train', download=True, transform=transform)
+        dst_test = datasets.LFWPeople(data_path, split='test', download=True, transform=transform)
+
+        # 获取类别名称和映射
+        class_names = dst_train.names
+        class_map = {x: x for x in range(num_classes)}
+        # class_map = dst_train.class_to_idx
 
     elif dataset.startswith('CIFAR100'):
         channel = 3
@@ -122,8 +185,10 @@ def get_dataset(dataset, data_path, batch_size=1, subset="imagenette", args=None
         mean = [0.4914, 0.4822, 0.4465]
         std = [0.2023, 0.1994, 0.2010]
 
+        # zca ==true , using ToTensor
         if args.zca:
             transform = transforms.Compose([transforms.ToTensor()])
+        #  else Normalize 归一化
         else:
             transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=mean, std=std)])
         dst_train = datasets.CIFAR100(data_path, train=True, download=True, transform=transform)  # no augmentation
@@ -341,6 +406,7 @@ def epoch(mode, dataloader, net, optimizer, criterion, args, aug, texture=False)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            torch.cuda.empty_cache() # release cache
 
     loss_avg /= num_exp
     acc_avg /= num_exp

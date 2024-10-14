@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.utils
+from pytorch_metric_learning import losses
 from tqdm import tqdm
 from utils import get_dataset, get_network, get_eval_pool, evaluate_synset, get_time, DiffAugment, ParamDiffAug
 import wandb
@@ -139,7 +140,11 @@ def main(args):
     optimizer_lr = torch.optim.SGD([syn_lr], lr=args.lr_lr, momentum=0.5)
     optimizer_img.zero_grad()
 
+
+
+    # criterion = losses.ArcFaceLoss(num_classes=num_classes, embedding_size=256).to(args.device)
     criterion = nn.CrossEntropyLoss().to(args.device)
+
     print('%s training begins'%get_time())
 
     expert_dir = os.path.join(args.buffer_path, args.dataset)

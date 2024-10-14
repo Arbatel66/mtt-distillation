@@ -5,6 +5,8 @@ import torch.nn as nn
 from tqdm import tqdm
 from utils import get_dataset, get_network, get_daparam,\
     TensorDataset, epoch, ParamDiffAug
+from pytorch_metric_learning import losses
+
 import copy
 
 import warnings
@@ -16,7 +18,8 @@ def main(args):
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.dsa_param = ParamDiffAug()
 
-    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv = get_dataset(args.dataset, args.data_path, args.batch_real, args.subset, args=args)
+    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader, loader_train_dict, class_map, class_map_inv \
+        = get_dataset(args.dataset, args.data_path, args.batch_real, args.subset, args=args)
 
     # print('\n================== Exp %d ==================\n '%exp)
     print('Hyper-parameters: \n', args.__dict__)
@@ -52,6 +55,9 @@ def main(args):
     for ch in range(channel):
         print('real images channel %d, mean = %.4f, std = %.4f'%(ch, torch.mean(images_all[:, ch]), torch.std(images_all[:, ch])))
 
+    # embedding_size 特征嵌入向量
+    # criterion = losses.ArcFaceLoss(num_classes=num_classes, embedding_size=256).to(args.device)
+
     criterion = nn.CrossEntropyLoss().to(args.device)
 
     trajectories = []
@@ -83,6 +89,7 @@ def main(args):
 
             train_loss, train_acc = epoch("train", dataloader=trainloader, net=teacher_net, optimizer=teacher_optim,
                                         criterion=criterion, args=args, aug=True)
+            torch.cuda.empty_cache()  # 释放显存
 
             test_loss, test_acc = epoch("test", dataloader=testloader, net=teacher_net, optimizer=None,
                                         criterion=criterion, args=args, aug=False)
